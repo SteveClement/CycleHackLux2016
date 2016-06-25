@@ -1,22 +1,10 @@
-// Test code for Ultimate GPS Using Hardware Serial (
-// e.g. Adafruit Flora GPS modules or  GPS FeatherWing
-//
-// This code shows how to listen to the GPS module in an interrupt
-// which allows the program to have more 'freedom' - just parse
-// when a new NMEA sentence is available! Then access data when
-// desired.
-//
-// Tested and works great with the Adafruit Flora GPS module
-// ------> http://adafruit.com/products/1059
-// ------> http://adafruit.com/products/3133
-// Pick one up today at the Adafruit electronics shop
-// and help support open source hardware & software! -ada
-     
+// GPS library includes
 #include <Adafruit_GPS.h>
 #ifdef __AVR__ 
  #include <SoftwareSerial.h>
 #endif
 
+// Dotstar LED-Strip includes
 #include <Adafruit_DotStar.h>
 // Because conditional #includes don't work w/Arduino sketches...
 #include <SPI.h>         // COMMENT OUT THIS LINE FOR GEMMA OR TRINKET
@@ -27,8 +15,9 @@
 // Here's how to control the LEDs from any two pins:
 #define DATAPIN    9
 #define CLOCKPIN   6
-Adafruit_DotStar strip = Adafruit_DotStar(
-  NUMPIXELS, DATAPIN, CLOCKPIN, DOTSTAR_BRG);
+
+// Define strip object
+Adafruit_DotStar strip = Adafruit_DotStar(NUMPIXELS, DATAPIN, CLOCKPIN, DOTSTAR_BRG);
 // The last parameter is optional -- this is the color data order of the
 // DotStar strip, which has changed over time in different production runs.
 // Your code just uses R,G,B colors, the library then reassigns as needed.
@@ -70,11 +59,11 @@ void setup()
   // print it out we don't suggest using anything higher than 1 Hz
      
   // Request updates on antenna status, comment out to keep quiet
-  GPS.sendCommand(PGCMD_ANTENNA);
+  //GPS.sendCommand(PGCMD_ANTENNA);
 
-#if defined(__AVR_ATtiny85__) && (F_CPU == 16000000L)
-  clock_prescale_set(clock_div_1); // Enable 16 MHz on Trinket
-#endif
+  #if defined(__AVR_ATtiny85__) && (F_CPU == 16000000L)
+    clock_prescale_set(clock_div_1); // Enable 16 MHz on Trinket
+  #endif
 
   strip.begin(); // Initialize pins for output
   strip.show();  // Turn all LEDs off ASAP
@@ -82,19 +71,32 @@ void setup()
   delay(1000);
   // Ask for firmware version
   Serial1.println(PMTK_Q_RELEASE);
+
+  // Maximum speed in km/h
+  int MAXSPEED = 40;
+
+  // Convert to knots
+  int MAXSPEEDK = MAXSPEED / 1.852;
+
+  // Define LEDs per Knot  
+  int LEDpK = NUMPIXELS / MAXSPEEDK ;
 }
      
      
-int      head  = 0, tail = -10; // Index of first 'on' and 'off' pixels
+int      head  = 0, tail = -3; // Index of first 'on' and 'off' pixels
 uint32_t color = 0xFF0000;      // 'On' color (starts red)
+uint32_t red = 0xFF0000;
+uint32_t green = 0x00FF00;
+uint32_t yellow = 0x00FFFF;
 
 uint32_t timer = millis();
+
 void loop() // run over and over again
 {
   strip.setPixelColor(head, color); // 'On' pixel at head
   strip.setPixelColor(tail, 0);     // 'Off' pixel at tail
   strip.show();                     // Refresh strip
-  delay(20);                        // Pause 20 milliseconds (~50 FPS)
+  delay(10);                        // Pause 20 milliseconds (~50 FPS)
 
   if(++head >= NUMPIXELS) {         // Increment head index.  Off end of strip?
     head = 0;                       //  Yes, reset head index to start
@@ -134,6 +136,10 @@ void loop() // run over and over again
     Serial.println(GPS.year, DEC);
     Serial.print("Fix: "); Serial.print((int)GPS.fix);
     Serial.print(" quality: "); Serial.println((int)GPS.fixquality);
+//  Serial1.println(LEDpK);
+  //Serial1.println(MAXSPEED);
+  //Serial1.println(MAXSPEEDK);
+
     if (GPS.fix) {
       Serial.print("Location: ");
       Serial.print(GPS.latitude, 4); Serial.print(GPS.lat);
@@ -143,6 +149,10 @@ void loop() // run over and over again
       Serial.print("Angle: "); Serial.println(GPS.angle);
       Serial.print("Altitude: "); Serial.println(GPS.altitude);
       Serial.print("Satellites: "); Serial.println((int)GPS.satellites);
+
+      if (GPS.speed < 1) {
+      // Set strip
+      }
     }
   }
 }

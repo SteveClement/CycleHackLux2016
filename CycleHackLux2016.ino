@@ -1,3 +1,6 @@
+// Include NeoPixel for on-board Pixel
+#include <Adafruit_NeoPixel.h>
+
 // GPS library includes
 #include <Adafruit_GPS.h>
 #ifdef __AVR__ 
@@ -11,6 +14,11 @@
 //#include <avr/power.h> // ENABLE THIS LINE FOR GEMMA OR TRINKET
 
 #define NUMPIXELS 72 // Number of LEDs in strip
+
+#define PIN 8
+
+// on-board pixel
+Adafruit_NeoPixel pixel = Adafruit_NeoPixel(1, PIN, NEO_GRB + NEO_KHZ800);
 
 // Here's how to control the LEDs from any two pins:
 #define DATAPIN    9
@@ -66,44 +74,159 @@ void setup()
   #endif
 
   strip.begin(); // Initialize pins for output
+  strip.setBrightness(128);
   strip.show();  // Turn all LEDs off ASAP
+
+  pixel.begin();
+  pixel.show();
 
   delay(1000);
   // Ask for firmware version
   Serial1.println(PMTK_Q_RELEASE);
 
-  // Maximum speed in km/h
-  int MAXSPEED = 40;
-
-  // Convert to knots
-  int MAXSPEEDK = MAXSPEED / 1.852;
-
-  // Define LEDs per Knot  
-  int LEDpK = NUMPIXELS / MAXSPEEDK ;
 }
-     
      
 int      head  = 0, tail = -3; // Index of first 'on' and 'off' pixels
 uint32_t color = 0xFF0000;      // 'On' color (starts red)
-uint32_t red = 0xFF0000;
-uint32_t green = 0x00FF00;
-uint32_t yellow = 0x00FFFF;
+uint32_t blue = 0xFF0000;
+uint32_t red = 0x00FF00;
+uint32_t green = 0x0000FF;
+uint32_t yellow = 0xFF00FF;
 
 uint32_t timer = millis();
 
+// Maximum speed in km/h
+int MAXSPEED = 40;
+
+// Convert to knots
+int MAXSPEEDK = MAXSPEED / 1.852;
+
+// Define LEDs per Knot  
+int LEDpK = NUMPIXELS / MAXSPEEDK ;
+
+// Fill the pixel with a color
+void colorWipe(uint32_t c, uint8_t wait) {
+  for(uint16_t i=0; i<strip.numPixels(); i++) {
+    strip.setPixelColor(i, c);
+    strip.show();
+    delay(wait);
+  }
+}
+
+void fullRed()
+{
+  uint16_t p;
+  
+  for(p=0; p<NUMPIXELS; p++) {
+    strip.setPixelColor(p, red);
+  }
+  strip.show();
+}
+
+void blank()
+{
+  uint16_t p;
+  
+  for(p=0; p<NUMPIXELS; p++) {
+    strip.setPixelColor(p, 0);
+  }
+  strip.show();
+}
+
+void fullGreen()
+{
+  uint16_t p;
+  
+  for(p=0; p<NUMPIXELS; p++) {
+    strip.setPixelColor(p, green);
+  }
+  strip.show();
+}
+
+void speedUp()
+{
+  uint16_t p;
+  
+  for(p=NUMPIXELS; p<(NUMPIXELS*0.3); --p) {
+    Serial.println(p);
+    strip.setPixelColor(p, green);
+    delay(random(150,350));
+    if (p == 10) {
+      delay(500);
+    }
+    strip.show();
+  }
+}
+
+void constantVar()
+{
+  uint16_t p;
+  
+  for(p=(NUMPIXELS*0.3); p<(NUMPIXELS*0.8); p++) {
+    strip.setPixelColor(p, green);
+    delay(random(150,350));
+    if (p == 23) {
+      delay(500);
+    }
+    strip.show();
+  }
+    delay(1500);
+
+    for(p=(NUMPIXELS*0.8)-5; p<(NUMPIXELS*0.8)+5; p++) {
+      strip.setPixelColor(p, green);
+      delay(150);
+      if (p == 23) {
+        delay(500);
+      }
+      strip.show();
+    } 
+      delay(1500);
+}
+
+void swipeDownRed()
+{
+    uint16_t p;
+    for(p=72; p>-1; p = p - 1) {
+      Serial.println(p);
+      strip.setPixelColor(p, red);
+      delay(250);
+      if (p == 42) {
+        delay(500);
+      }
+      if (p == 23) {
+        delay(300);
+      }
+      if (p == 64) {
+        delay(700);
+      }
+      strip.show();
+    }
+}
+
 void loop() // run over and over again
 {
-  strip.setPixelColor(head, color); // 'On' pixel at head
-  strip.setPixelColor(tail, 0);     // 'Off' pixel at tail
-  strip.show();                     // Refresh strip
-  delay(10);                        // Pause 20 milliseconds (~50 FPS)
+//  strip.setPixelColor(head, red); // 'On' pixel at head
+//  strip.setPixelColor(NUMPIXELS, 0);     // 'Off' pixel at tail
+//  strip.show();                     // Refresh strip
 
-  if(++head >= NUMPIXELS) {         // Increment head index.  Off end of strip?
-    head = 0;                       //  Yes, reset head index to start
-    if((color >>= 8) == 0)          //  Next color (R->G->B) ... past blue now?
-      color = 0xFF0000;             //   Yes, reset to red
-  }
-  if(++tail >= NUMPIXELS) tail = 0; // Increment, reset tail index
+  //blank();
+  
+  //speedUp();
+
+  //constantVar();
+
+  //fullGreen();
+
+  //swipeDownRed();
+  
+//  delay(20);                        // Pause 20 milliseconds (~50 FPS)
+
+//  if(++head >= NUMPIXELS) {         // Increment head index.  Off end of strip?
+//    head = 0;                       //  Yes, reset head index to start
+//    if((color >>= 8) == 0)          //  Next color (R->G->B) ... past blue now?
+//      color = 0xFF0000;             //   Yes, reset to red
+//  }
+//  if(++tail >= NUMPIXELS) tail = 0; // Increment, reset tail index
 
   // read data from the GPS in the 'main loop'
   char c = GPS.read();
@@ -136,9 +259,9 @@ void loop() // run over and over again
     Serial.println(GPS.year, DEC);
     Serial.print("Fix: "); Serial.print((int)GPS.fix);
     Serial.print(" quality: "); Serial.println((int)GPS.fixquality);
-//  Serial1.println(LEDpK);
-  //Serial1.println(MAXSPEED);
-  //Serial1.println(MAXSPEEDK);
+//    Serial.println(LEDpK);
+//    Serial.println(MAXSPEED);
+//    Serial.println(MAXSPEEDK);
 
     if (GPS.fix) {
       Serial.print("Location: ");
@@ -149,6 +272,9 @@ void loop() // run over and over again
       Serial.print("Angle: "); Serial.println(GPS.angle);
       Serial.print("Altitude: "); Serial.println(GPS.altitude);
       Serial.print("Satellites: "); Serial.println((int)GPS.satellites);
+      //fullRed();
+      //speedUp();
+      //colorWipe(pixel.Color(0, 0, 255), 50); // Blue
 
       if (GPS.speed < 1) {
       // Set strip

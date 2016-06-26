@@ -74,7 +74,7 @@ void setup()
   #endif
 
   strip.begin(); // Initialize pins for output
-  strip.setBrightness(128);
+  strip.setBrightness(200);
   strip.show();  // Turn all LEDs off ASAP
 
   pixel.begin();
@@ -85,13 +85,16 @@ void setup()
   Serial1.println(PMTK_Q_RELEASE);
 
 }
-     
+
+     // Color to be defined: BRG (NOT RGB)
 int      head  = 0, tail = -3; // Index of first 'on' and 'off' pixels
 uint32_t color = 0xFF0000;      // 'On' color (starts red)
 uint32_t blue = 0xFF0000;
 uint32_t red = 0x00FF00;
 uint32_t green = 0x0000FF;
-uint32_t yellow = 0xFF00FF;
+uint32_t yellow = 0x06ED78;
+uint32_t orange = 0x47FF63;
+uint32_t white = 0xFFFFFF;
 
 uint32_t timer = millis();
 
@@ -123,6 +126,17 @@ void fullRed()
   strip.show();
 }
 
+void fullWhite()
+{
+  uint16_t p;
+  
+  for(p=0; p<NUMPIXELS; p++) {
+    strip.setPixelColor(p, white);
+  }
+  strip.show();
+}
+
+
 void blank()
 {
   uint16_t p;
@@ -145,15 +159,56 @@ void fullGreen()
 
 void speedUp()
 {
-  uint16_t p;
-  
-  for(p=NUMPIXELS; p<(NUMPIXELS*0.3); --p) {
-    Serial.println(p);
-    strip.setPixelColor(p, green);
-    delay(random(150,350));
+  // uint16_t p;
+
+  //for (long i = NUMPIXELS-1; i >= 0; --i) {
+  //  Serial.print(i);
+  //  strip.setPixelColor(i, green);
+  //  delay(random(150,350));
+  //  if (i == 10) {
+  //    delay(500);
+  // }
+  //  strip.show();
+  //}
+
+  for(long p=NUMPIXELS-1; p>(NUMPIXELS*0.1); --p) {
+    if (p > 50) {
+      strip.setPixelColor(p, red);
+    }
+    else {
+      if (p > 29) {
+       strip.setPixelColor(p, yellow);
+      }
+    else {
+      if (p > 1) {
+       strip.setPixelColor(p, green);
+      }
+    }
+    }
+
+    if (p > 50) {
+      delay(random(150,350));
+    }
+          else {
+        delay(random(150,250));
+          }
     if (p == 10) {
       delay(500);
     }
+
+    if (p == random(50,60) ) {
+      delay(random(10,70));
+    }
+
+    if (p == random(30,50) ) {
+      delay(random(50,300));
+    }
+
+    if (p == random(20,30) ) {
+      delay(random(100,700));
+    }
+
+    
     strip.show();
   }
 }
@@ -183,18 +238,23 @@ void constantVar()
       delay(1500);
 }
 
-void swipeDownRed()
+void swipeDown()
 {
     uint16_t p;
-    for(p=72; p>-1; p = p - 1) {
+    for(p=0; p<NUMPIXELS; p++) {
       Serial.println(p);
-      strip.setPixelColor(p, red);
-      delay(250);
+      strip.setPixelColor(p, 0);
+      if (p > 50) {
+        delay(random(250,300));
+      }
+      else {
+        delay(random(150,250));
+      }
       if (p == 42) {
-        delay(500);
+        delay(1500);
       }
       if (p == 23) {
-        delay(300);
+        delay(3000);
       }
       if (p == 64) {
         delay(700);
@@ -262,6 +322,10 @@ void loop() // run over and over again
 //    Serial.println(LEDpK);
 //    Serial.println(MAXSPEED);
 //    Serial.println(MAXSPEEDK);
+      //fullWhite();
+      //blank();
+      speedUp();
+      swipeDown();
 
     if (GPS.fix) {
       Serial.print("Location: ");
@@ -273,11 +337,12 @@ void loop() // run over and over again
       Serial.print("Altitude: "); Serial.println(GPS.altitude);
       Serial.print("Satellites: "); Serial.println((int)GPS.satellites);
       //fullRed();
+      //fulleWhite();
       //speedUp();
       //colorWipe(pixel.Color(0, 0, 255), 50); // Blue
 
       if (GPS.speed < 1) {
-      // Set strip
+        // Set strip
       }
     }
   }
